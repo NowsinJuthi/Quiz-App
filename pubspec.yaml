@@ -1,0 +1,29 @@
+name: quiz_app
+description: A Quiz App with Teacher and Student roles using Flutter + Firebase
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.18.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase (Compatible with Dart 2.18–2.19)
+  firebase_core: ^4.2.0
+  firebase_auth: ^6.1.1
+  cloud_firestore: ^6.0.3
+
+  # Utilities
+  provider: ^6.0.5
+  fluttertoast: ^9.0.0
+  intl: ^0.20.2
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
