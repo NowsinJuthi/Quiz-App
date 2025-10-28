@@ -1,11 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/quiz_model.dart';
-import '../models/question_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // quizzes CRUD
+  // create quiz
   Future<String> createQuiz(QuizModel quiz) async {
     final doc = _db.collection('quizzes').doc();
     quiz.id = doc.id;
@@ -19,7 +18,6 @@ class FirestoreService {
 
   Future<void> deleteQuiz(String quizId) async {
     await _db.collection('quizzes').doc(quizId).delete();
-    // Optionally delete related results
   }
 
   Stream<List<QuizModel>> teacherQuizzes(String teacherId) {
@@ -27,17 +25,16 @@ class FirestoreService {
         .collection('quizzes')
         .where('createdBy', isEqualTo: teacherId)
         .snapshots()
-        .map(
-          (snap) => snap.docs.map((d) => QuizModel.fromMap(d.data())).toList(),
-        );
+        .map((snap) => snap.docs
+            .map((d) => QuizModel.fromMap(d.data()..['id'] = d.id))
+            .toList());
   }
 
   Stream<List<QuizModel>> allQuizzes() {
-    return _db
-        .collection('quizzes')
-        .snapshots()
-        .map(
-          (snap) => snap.docs.map((d) => QuizModel.fromMap(d.data())).toList(),
+    return _db.collection('quizzes').snapshots().map(
+          (snap) => snap.docs
+              .map((d) => QuizModel.fromMap(d.data()..['id'] = d.id))
+              .toList(),
         );
   }
 
@@ -62,18 +59,16 @@ class FirestoreService {
   }
 
   Stream<List<Map<String, dynamic>>> getResultsForTeacher(String teacherId) {
-    // teacherId optional filter if results store teacher info; for simplicity just return all and teacher filters client-side
+    // optionally you can filter by teacherId if you save teacherId in results
     return _db
         .collection('results')
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (s) => s.docs.map((d) {
-            final m = d.data();
-            m['id'] = d.id;
-            return m;
-          }).toList(),
-        );
+        .map((s) => s.docs.map((d) {
+              final m = d.data();
+              m['id'] = d.id;
+              return m;
+            }).toList());
   }
 
   Stream<List<Map<String, dynamic>>> getResultsForStudent(String studentId) {
@@ -82,12 +77,10 @@ class FirestoreService {
         .where('studentId', isEqualTo: studentId)
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (s) => s.docs.map((d) {
-            final m = d.data();
-            m['id'] = d.id;
-            return m;
-          }).toList(),
-        );
+        .map((s) => s.docs.map((d) {
+              final m = d.data();
+              m['id'] = d.id;
+              return m;
+            }).toList());
   }
 }

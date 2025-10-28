@@ -12,11 +12,11 @@ class QuestionModel {
   });
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'question': question,
-    'options': options,
-    'correctIndex': correctIndex,
-  };
+        'id': id,
+        'question': question,
+        'options': options,
+        'correctIndex': correctIndex,
+      };
 
   factory QuestionModel.fromMap(Map<String, dynamic> map) {
     return QuestionModel(

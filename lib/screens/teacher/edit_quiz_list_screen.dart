@@ -25,20 +25,29 @@ class EditQuizListScreen extends StatelessWidget {
               final q = list[i];
               return ListTile(
                 title: Text(q.title),
-                subtitle: Text(
-                  '${q.questions.length} questions • ${q.category}',
-                ),
+                subtitle:
+                    Text('${q.questions.length} questions • ${q.category}'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () {
-                        // For brevity reuse AddQuizScreen for editing by passing existing data
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => AddQuizScreen()),
-                        ); // You can create dedicated Edit screen
+                        // For brevity reuse AddQuizScreen for adding. To edit, create separate edit screen.
+                        // If you want full edit: implement EditQuizScreen passing q.
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Edit not implemented'),
+                            content:
+                                const Text('Implement Edit screen if needed.'),
+                            actions: [
+                              TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('OK')),
+                            ],
+                          ),
+                        );
                       },
                     ),
                     IconButton(
@@ -46,8 +55,7 @@ class EditQuizListScreen extends StatelessWidget {
                       onPressed: () async {
                         await FirestoreService().deleteQuiz(q.id);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Deleted')),
-                        );
+                            const SnackBar(content: Text('Deleted')));
                       },
                     ),
                   ],

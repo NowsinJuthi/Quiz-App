@@ -16,13 +16,14 @@ class AuthService {
       email: email,
       password: password,
     );
-    final user = cred.user!;
-    await _db.collection('users').doc(user.uid).set({
+
+    await _db.collection('users').doc(cred.user!.uid).set({
       'email': email,
       'role': role,
       'createdAt': FieldValue.serverTimestamp(),
     });
-    return user;
+
+    return cred.user;
   }
 
   Future<User?> login({required String email, required String password}) async {

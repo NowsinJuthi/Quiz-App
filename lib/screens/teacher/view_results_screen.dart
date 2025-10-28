@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // এই লাইনটা যোগ করো
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/firestore_service.dart';
 
 class ViewResultsScreen extends StatelessWidget {
@@ -22,13 +22,14 @@ class ViewResultsScreen extends StatelessWidget {
             itemBuilder: (c, i) {
               final r = items[i];
               final date = r['date'] != null
-                  ? (r['date'] as Timestamp).toDate().toString()
+                  ? (r['date'] is Timestamp
+                      ? (r['date'] as Timestamp).toDate().toString()
+                      : r['date'].toString())
                   : '';
               return ListTile(
                 title: Text(r['studentEmail'] ?? 'Unknown'),
                 subtitle: Text(
-                  '${r['quizTitle'] ?? ''} • ${r['score']}/${r['total']}',
-                ),
+                    '${r['quizTitle'] ?? ''} • ${r['score']}/${r['total']}'),
                 trailing: Text(date.split('.').first),
               );
             },

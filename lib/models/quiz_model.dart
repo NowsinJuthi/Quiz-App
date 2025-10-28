@@ -16,12 +16,12 @@ class QuizModel {
   });
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'title': title,
-    'category': category,
-    'createdBy': createdBy,
-    'questions': questions.map((q) => q.toMap()).toList(),
-  };
+        'id': id,
+        'title': title,
+        'category': category,
+        'createdBy': createdBy,
+        'questions': questions.map((q) => q.toMap()).toList(),
+      };
 
   factory QuizModel.fromMap(Map<String, dynamic> map) {
     return QuizModel(

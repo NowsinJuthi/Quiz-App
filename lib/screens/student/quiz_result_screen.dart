@@ -35,9 +35,8 @@ class QuizResultScreen extends StatelessWidget {
                   final chosen = answers[i];
                   final correct = q.correctIndex;
                   final correctText = q.options[correct];
-                  final chosenText = chosen != null
-                      ? q.options[chosen]
-                      : 'Not answered';
+                  final chosenText =
+                      chosen != null ? q.options[chosen] : 'Not answered';
                   return Card(
                     child: ListTile(
                       title: Text(q.question),
@@ -60,7 +59,6 @@ class QuizResultScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                // retry: go back to student dashboard
                 Navigator.of(context).popUntil((route) => route.isFirst);
               },
               child: const Text('Back to Dashboard'),

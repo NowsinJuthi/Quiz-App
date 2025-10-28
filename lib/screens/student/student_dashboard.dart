@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/quiz_model.dart';
-import 'quiz_play_screen.dart';
-import 'quiz_result_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../student/quiz_play_screen.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 
 class StudentDashboard extends StatelessWidget {
   const StudentDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final userProv = Provider.of<UserProvider>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Student Dashboard'),
@@ -18,9 +20,7 @@ class StudentDashboard extends StatelessWidget {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              Navigator.of(
-                context,
-              ).pushNamedAndRemoveUntil('/', (route) => false);
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
             },
           ),
         ],

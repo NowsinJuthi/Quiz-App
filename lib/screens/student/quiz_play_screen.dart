@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/quiz_model.dart';
-import '../../models/question_model.dart';
 import '../../services/firestore_service.dart';
 import 'quiz_result_screen.dart';
 
@@ -19,9 +18,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   int score = 0;
 
   void _submitAnswer() {
-    final q = widget.quiz.questions[_index];
-    final chosen = answers[_index];
-    // no instant score calc here. We'll compute on finish.
     setState(() {
       if (_index < widget.quiz.questions.length - 1)
         _index++;
@@ -31,7 +27,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
   }
 
   void _finishQuiz() async {
-    // calculate score
     score = 0;
     final total = widget.quiz.questions.length;
     for (int i = 0; i < total; i++) {
@@ -39,7 +34,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       final chosen = answers[i];
       if (chosen != null && chosen == q.correctIndex) score++;
     }
-    // save result
     final user = FirebaseAuth.instance.currentUser!;
     await FirestoreService().saveResult(
       studentId: user.uid,
@@ -49,7 +43,6 @@ class _QuizPlayScreenState extends State<QuizPlayScreen> {
       score: score,
       total: total,
     );
-    // go to result screen
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

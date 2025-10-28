@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-void showToast(String s) =>
-    Fluttertoast.showToast(msg: s, gravity: ToastGravity.BOTTOM);
-
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
@@ -15,4 +12,8 @@ class AppButton extends StatelessWidget {
       child: ElevatedButton(onPressed: onPressed, child: Text(label)),
     );
   }
+}
+
+void showToast(String msg) {
+  Fluttertoast.showToast(msg: msg, gravity: ToastGravity.BOTTOM);
 }

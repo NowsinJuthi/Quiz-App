@@ -30,7 +30,6 @@ class _AddQuizScreenState extends State<AddQuizScreen> {
       showToast('Provide a quiz title');
       return;
     }
-    // simple validation for questions
     if (_questions.isEmpty) {
       showToast('Add at least one question');
       return;
