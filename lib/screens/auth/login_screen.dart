@@ -6,13 +6,17 @@ import '../root_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+<<<<<<< HEAD
   
+=======
+>>>>>>> 7258c644030baf4ef8de0d43d5ec1249a9a5a455
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+<<<<<<< HEAD
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -217,6 +221,69 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
+=======
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  bool _loading = false;
+
+  final AuthService _auth = AuthService();
+
+  void _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _loading = true);
+    try {
+      final user = await _auth.login(
+        email: _email.text.trim(),
+        password: _password.text.trim(),
+      );
+
+      final userProv = Provider.of<UserProvider>(context, listen: false);
+      await userProv.loadUserRole(user!.uid);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const RootPage()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Login')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _email,
+                decoration: const InputDecoration(labelText: 'Email'),
+                validator: (v) =>
+                    v != null && v.contains('@') ? null : 'Invalid email',
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _password,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true,
+                validator: (v) =>
+                    v != null && v.length >= 6 ? null : 'Min 6 characters',
+              ),
+              const SizedBox(height: 24),
+              _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton(
+                      onPressed: _submit, child: const Text('Login')),
+            ],
+>>>>>>> 7258c644030baf4ef8de0d43d5ec1249a9a5a455
           ),
         ),
       ),

@@ -17,6 +17,10 @@ import 'package:flutter/foundation.dart'
 /// ```
 ///
 import 'package:firebase_core/firebase_core.dart';
+<<<<<<< HEAD
+=======
+import 'firebase_options.dart';
+>>>>>>> 7258c644030baf4ef8de0d43d5ec1249a9a5a455
 
 // ...
 
