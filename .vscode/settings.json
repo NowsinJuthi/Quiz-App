@@ -1,0 +1,30 @@
+{
+
+  "dart.hotReloadOnSave": "always",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+
+ 
+  "editor.defaultFormatter": "Dart-Code.dart-code",
+  "[dart]": {
+    "editor.formatOnSave": true
+  },
+
+
+  "workbench.colorTheme": "Default Dark+",
+  "editor.minimap.enabled": false,
+  "editor.renderWhitespace": "boundary",
+
+  "dart.analysisServerFolding": true,
+  "dart.showTodos": true,
+
+
+  "dart.flutterHotRestartOnSave": false,
+  "dart.previewFlutterUiGuides": true,
+
+
+  "dart.debugExternalLibraries": false,
+  "dart.debugSdkLibraries": false
+}
