@@ -7,8 +7,10 @@ import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../models/quiz_model.dart';
 import '../../models/question_model.dart';
-import 'quiz_play_screen.dart';
-import 'quiz_result_screen.dart';
+import 'quiz_play_screen.dart' show QuizPlayScreen;
+import 'quiz_result_screen.dart' show QuizResultScreen;
+// add import for the external profile page
+import 'profile_page.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -27,7 +29,7 @@ class _StudentDashboardState extends State<StudentDashboard>
   @override
   void initState() {
     super.initState();
-    _pages = const [
+    _pages = [
       DashboardHomePage(),
       AvailableQuizzesPage(),
       MyResultsPage(),
@@ -47,8 +49,14 @@ class _StudentDashboardState extends State<StudentDashboard>
   }
 
   void _onItemTapped(int index) {
-    // If user taps Quizzes or Results, open the QuizResultScreen with demo data
-    if (index == 1 || index == 2) {
+    // Quizzes -> /studentdashboard/quizzes
+    if (index == 1) {
+      Navigator.pushReplacementNamed(context, '/studentdashboard/quizzes');
+      return;
+    }
+
+    // Results -> /studentdashboard/result (pass demo data as arguments)
+    if (index == 2) {
       final demoQuiz = QuizModel(
         id: 'demo_for_nav',
         title: 'Demo Quiz (from nav)',
@@ -68,20 +76,25 @@ class _StudentDashboardState extends State<StudentDashboard>
         ],
       );
       final answers = <int, int>{};
-      for (var i = 0; i < demoQuiz.questions.length; i++) {
+      for (var i = 0; i < demoQuiz.questions.length; i++)
         answers[i] = demoQuiz.questions[i].correctIndex;
-      }
-      Navigator.push(
+
+      Navigator.pushReplacementNamed(
         context,
-        MaterialPageRoute(
-          builder: (_) => QuizResultScreen(
-            score: demoQuiz.questions.length,
-            total: demoQuiz.questions.length,
-            quiz: demoQuiz,
-            answers: answers,
-          ),
-        ),
+        '/studentdashboard/result',
+        arguments: {
+          'quiz': demoQuiz,
+          'score': demoQuiz.questions.length,
+          'total': demoQuiz.questions.length,
+          'answers': answers,
+        },
       );
+      return;
+    }
+
+    // Profile -> open profile route (no login required)
+    if (index == 3) {
+      Navigator.pushNamed(context, '/studentdashboard/profile');
       return;
     }
 
@@ -563,90 +576,6 @@ class MyResultsPage extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-/// ============================
-/// PROFILE PAGE
-/// ============================
-class StudentProfilePage extends StatelessWidget {
-  const StudentProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final user = Provider.of<UserProvider>(context);
-    final currentUser = AuthService().currentUser;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        children: [
-          const CircleAvatar(
-            radius: 60,
-            backgroundColor: Colors.deepPurpleAccent,
-            child: Icon(Icons.person_rounded, color: Colors.white, size: 70),
-          ),
-          const SizedBox(height: 18),
-          Text(currentUser?.email ?? 'Student User',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22)),
-          const SizedBox(height: 8),
-          Chip(
-            label: Text(user.role ?? 'student'),
-            backgroundColor: Colors.purpleAccent.withOpacity(0.3),
-          ),
-          const SizedBox(height: 30),
-          const GlassProfileStats(),
-        ],
-      ),
-    );
-  }
-}
-
-class GlassProfileStats extends StatelessWidget {
-  const GlassProfileStats({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
-            border: Border.all(color: Colors.white24),
-          ),
-          child: const Column(
-            children: [
-              ListTile(
-                leading: Icon(Icons.quiz_rounded, color: Colors.cyanAccent),
-                title: Text('Quizzes Taken',
-                    style: TextStyle(color: Colors.white)),
-                trailing: Text('5',
-                    style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
-              ),
-              Divider(color: Colors.white24),
-              ListTile(
-                leading: Icon(Icons.star_rounded, color: Colors.orangeAccent),
-                title:
-                    Text('Total Score', style: TextStyle(color: Colors.white)),
-                trailing: Text('410',
-                    style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
-              ),
-              Divider(color: Colors.white24),
-              ListTile(
-                leading: Icon(Icons.timer_rounded, color: Colors.purpleAccent),
-                title:
-                    Text('Study Time', style: TextStyle(color: Colors.white)),
-                trailing: Text('3h',
-                    style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -4,10 +4,6 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../models/quiz_model.dart';
 import '../../models/question_model.dart';
-import '../student/quiz_play_screen.dart';
-import 'add_quiz_screen.dart';
-import 'edit_quiz_list_screen.dart';
-import 'view_results_screen.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -188,6 +184,29 @@ class _TeacherHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final features = [
+      {
+        'title': 'Create Quiz',
+        'icon': Icons.add_circle_outline,
+        'route': '/teacher-create-quiz'
+      },
+      {
+        'title': 'View Quizzes',
+        'icon': Icons.list_alt_rounded,
+        'route': '/teacher-view-quiz'
+      },
+      {
+        'title': 'Results',
+        'icon': Icons.assessment_rounded,
+        'route': '/teacher-results'
+      },
+      {
+        'title': 'Profile',
+        'icon': Icons.person_rounded,
+        'route': '/teacher-profile'
+      },
+    ];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 100, 20, 30),
       child: Column(
@@ -196,58 +215,54 @@ class _TeacherHomePage extends StatelessWidget {
           const Text(
             'Welcome Back, Teacher 👩‍🏫',
             style: TextStyle(
-                fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 10),
           const Text(
             'Manage quizzes, check student results, and track progress.',
-            style: TextStyle(color: Colors.white70, fontSize: 15),
+            style: TextStyle(color: Colors.white70, fontSize: 16),
           ),
           const SizedBox(height: 30),
-          GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.1,
-            children: [
-              _GlassFeatureCard(
-                  title: 'Create Quiz',
-                  icon: Icons.add_circle_outline,
+          Column(
+            children: features.map((f) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AddQuizScreen()),
-                    );
-                  }),
-              _GlassFeatureCard(
-                  title: 'View Quizzes',
-                  icon: Icons.list_alt_rounded,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const EditQuizListScreen()),
-                    );
-                  }),
-              _GlassFeatureCard(
-                  title: 'Results',
-                  icon: Icons.assessment_rounded,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const ViewResultsScreen()),
-                    );
-                  }),
-              _GlassFeatureCard(
-                  title: 'Profile',
-                  icon: Icons.person_rounded,
-                  onTap: () {
-                    // navigate to profile if you have a profile page
-                  }),
-            ],
+                    Navigator.pushNamed(context, f['route'] as String);
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: GlassCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [
+                              Colors.purpleAccent,
+                              Colors.blueAccent
+                            ]),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(f['icon'] as IconData,
+                              color: Colors.white, size: 32),
+                        ),
+                        const SizedBox(width: 20),
+                        Text(f['title'] as String,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18)),
+                        const Spacer(),
+                        const Icon(Icons.arrow_forward_ios,
+                            color: Colors.white70, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -256,7 +271,7 @@ class _TeacherHomePage extends StatelessWidget {
 }
 
 /// ====================
-/// QUIZ LIST PAGE (REDESIGNED LIKE EditQuizListScreen)
+/// QUIZ LIST PAGE
 /// ====================
 class _QuizListPage extends StatelessWidget {
   const _QuizListPage();
@@ -292,64 +307,61 @@ class _QuizListPage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: ListView.separated(
+        child: ListView.builder(
           itemCount: quizzes.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
             final quiz = quizzes[index];
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white24, width: 1),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: GlassCard(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            quiz.title,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${quiz.questions.length} Questions • ${quiz.category}',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Row(
                       children: [
-                        Text(
-                          quiz.title,
-                          style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
+                        IconButton(
+                          icon: const Icon(Icons.edit_rounded,
+                              color: Colors.cyanAccent),
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        EditQuizScreen(quiz: quiz)));
+                          },
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${quiz.questions.length} Questions • ${quiz.category}',
-                          style: const TextStyle(color: Colors.white70),
+                        IconButton(
+                          icon: const Icon(Icons.delete_forever_rounded,
+                              color: Colors.redAccent),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('${quiz.title} deleted')),
+                            );
+                          },
                         ),
                       ],
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_rounded,
-                            color: Colors.cyanAccent),
-                        onPressed: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => EditQuizScreen(quiz: quiz)));
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_forever_rounded,
-                            color: Colors.redAccent),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${quiz.title} deleted'),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  )
-                ],
+                    )
+                  ],
+                ),
               ),
             );
           },
@@ -360,7 +372,7 @@ class _QuizListPage extends StatelessWidget {
 }
 
 /// ====================
-/// EDIT QUIZ PAGE
+/// EDIT QUIZ SCREEN
 /// ====================
 class EditQuizScreen extends StatefulWidget {
   final QuizModel quiz;
@@ -498,64 +510,49 @@ class _ProfilePage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.deepPurpleAccent,
-              child: Icon(Icons.person_rounded, color: Colors.white, size: 70),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Colors.purpleAccent, Colors.blueAccent],
+                    ),
+                  ),
+                ),
+                const CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.deepPurpleAccent,
+                  child:
+                      Icon(Icons.person_rounded, color: Colors.white, size: 70),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
-            Text(
-              'Teacher Name',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold),
-            ),
+            const Text('Teacher Name',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('teacher@example.com',
+            const Text('teacher@example.com',
                 style: TextStyle(color: Colors.white70)),
             const SizedBox(height: 24),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white24, width: 1),
-              ),
-              child: Column(
-                children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.quiz_rounded,
-                        color: Colors.cyanAccent),
-                    title: const Text('Quizzes Created',
-                        style: TextStyle(color: Colors.white)),
-                    trailing: const Text('8',
-                        style: TextStyle(color: Colors.amberAccent)),
-                  ),
-                  const Divider(color: Colors.white24),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading:
-                        const Icon(Icons.done_all, color: Colors.greenAccent),
-                    title: const Text('Completed Quizzes',
-                        style: TextStyle(color: Colors.white)),
-                    trailing: const Text('12',
-                        style: TextStyle(color: Colors.amberAccent)),
-                  ),
-                  const Divider(color: Colors.white24),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.show_chart,
-                        color: Colors.orangeAccent),
-                    title: const Text('Avg. Score',
-                        style: TextStyle(color: Colors.white)),
-                    trailing: const Text('82%',
-                        style: TextStyle(color: Colors.amberAccent)),
-                  ),
-                ],
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: const [
+                _ProfileStat(
+                    label: 'Quizzes', value: '8', color: Colors.cyanAccent),
+                _ProfileStat(
+                    label: 'Completed', value: '12', color: Colors.greenAccent),
+                _ProfileStat(
+                    label: 'Avg. Score',
+                    value: '82%',
+                    color: Colors.orangeAccent),
+              ],
             ),
           ],
         ),
@@ -564,8 +561,29 @@ class _ProfilePage extends StatelessWidget {
   }
 }
 
+class _ProfileStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _ProfileStat(
+      {required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(value,
+            style: TextStyle(
+                color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(color: Colors.white70)),
+      ],
+    );
+  }
+}
+
 /// ====================
-/// GLASS COMPONENTS
+/// GLASS COMPONENT
 /// ====================
 class GlassCard extends StatelessWidget {
   final Widget child;
@@ -592,32 +610,22 @@ class GlassCard extends StatelessWidget {
   }
 }
 
-class _GlassFeatureCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final VoidCallback? onTap;
-  const _GlassFeatureCard(
-      {required this.title, required this.icon, this.onTap});
+class TeacherProfilePage extends StatelessWidget {
+  const TeacherProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: GlassCard(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: Colors.white),
-            const SizedBox(height: 12),
-            Text(title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w600)),
-          ],
-        ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0F2C),
+      appBar: AppBar(
+        title: const Text('Profile',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.white,
       ),
+      body: const Center(child: _ProfilePage()),
     );
   }
 }
