@@ -1,10 +1,14 @@
+import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../models/quiz_model.dart';
+import '../../models/question_model.dart';
 import 'quiz_play_screen.dart';
+import 'quiz_result_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -13,23 +17,75 @@ class StudentDashboard extends StatefulWidget {
   State<StudentDashboard> createState() => _StudentDashboardState();
 }
 
-class _StudentDashboardState extends State<StudentDashboard> {
+class _StudentDashboardState extends State<StudentDashboard>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   final AuthService _authService = AuthService();
   late final List<Widget> _pages;
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
     _pages = const [
-      StudentHomePage(),
+      DashboardHomePage(),
       AvailableQuizzesPage(),
       MyResultsPage(),
       StudentProfilePage(),
     ];
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 20),
+    )..repeat(); // infinite galaxy motion
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   void _onItemTapped(int index) {
+    // If user taps Quizzes or Results, open the QuizResultScreen with demo data
+    if (index == 1 || index == 2) {
+      final demoQuiz = QuizModel(
+        id: 'demo_for_nav',
+        title: 'Demo Quiz (from nav)',
+        category: 'Demo',
+        createdBy: 'system',
+        questions: [
+          QuestionModel(
+              id: 'd1',
+              question: 'Demo Q1?',
+              options: ['A', 'B', 'C', 'D'],
+              correctIndex: 0),
+          QuestionModel(
+              id: 'd2',
+              question: 'Demo Q2?',
+              options: ['A', 'B', 'C', 'D'],
+              correctIndex: 1),
+        ],
+      );
+      final answers = <int, int>{};
+      for (var i = 0; i < demoQuiz.questions.length; i++) {
+        answers[i] = demoQuiz.questions[i].correctIndex;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QuizResultScreen(
+            score: demoQuiz.questions.length,
+            total: demoQuiz.questions.length,
+            quiz: demoQuiz,
+            answers: answers,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Otherwise just switch the bottom nav tab
     setState(() => _selectedIndex = index);
   }
 
@@ -37,17 +93,20 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        backgroundColor: const Color(0xFF1B1440),
+        title: const Text('Logout', style: TextStyle(color: Colors.white)),
+        content: const Text('Are you sure you want to logout?',
+            style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            child:
+                const Text('Logout', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -63,178 +122,286 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xff0f172a) : const Color(0xfff9fbff),
+      backgroundColor: const Color(0xFF0A0F2C),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        elevation: 0,
-        title: const Text(
-          'Student Dashboard',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-        ),
+        title: const Text('🌌 Student Dashboard',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
-        foregroundColor: isDark ? Colors.white : Colors.blueAccent,
+        elevation: 0,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout_rounded),
+            icon: const Icon(Icons.logout_rounded, color: Colors.amberAccent),
             onPressed: _handleLogout,
           ),
         ],
       ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: _pages[_selectedIndex],
+      body: Stack(
+        children: [
+          /// 🌌 Animated Galaxy Background with Parallax
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return CustomPaint(
+                painter: GalaxyPainter(_controller.value),
+                size: Size.infinite,
+              );
+            },
+          ),
+
+          /// Main content
+          IndexedStack(index: _selectedIndex, children: _pages),
+        ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xff1e293b) : Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black26 : Colors.black12,
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            )
-          ],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF281B62), Color(0xFF432D92)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-          child: BottomNavigationBar(
-            backgroundColor: isDark ? const Color(0xff1e293b) : Colors.white,
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            selectedItemColor: Colors.blueAccent,
-            unselectedItemColor: Colors.grey,
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.home_rounded), label: 'Home'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.quiz_rounded), label: 'Quizzes'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.assessment_rounded), label: 'Results'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.person_rounded), label: 'Profile'),
-            ],
-          ),
-        ),
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black54, blurRadius: 10, offset: Offset(0, -2)),
+        ],
+      ),
+      child: BottomNavigationBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.amberAccent,
+        unselectedItemColor: Colors.white70,
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+              icon: Icon(Icons.home_rounded), label: 'Home'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.quiz_rounded), label: 'Quizzes'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.assessment_rounded), label: 'Results'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded), label: 'Profile'),
+        ],
       ),
     );
   }
 }
 
-/// ====================
+/// ============================
+/// 🌠 DYNAMIC GALAXY PAINTER
+/// ============================
+class GalaxyPainter extends CustomPainter {
+  final double t;
+  final Random rand = Random();
+  GalaxyPainter(this.t);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint();
+    final Rect rect = Offset.zero & size;
+
+    // 1️⃣ Flowing Nebula Layers
+    paint.shader = RadialGradient(
+      colors: [Colors.deepPurple.withOpacity(0.25), Colors.transparent],
+      radius: 1.2,
+      center: Alignment(0.4 * sin(t * 2 * pi), -0.3 * cos(t * 2 * pi)),
+    ).createShader(rect);
+    canvas.drawRect(rect, paint);
+
+    paint.shader = RadialGradient(
+      colors: [Colors.indigo.withOpacity(0.2), Colors.transparent],
+      radius: 1.5,
+      center: Alignment(-0.5 * cos(t * 2 * pi), 0.4 * sin(t * 2 * pi)),
+    ).createShader(rect);
+    canvas.drawRect(rect, paint);
+
+    // 2️⃣ Twinkling Stars
+    _drawTwinklingStars(canvas, size, 80, 1.5, Colors.white70, t);
+    _drawTwinklingStars(canvas, size, 50, 2.0, Colors.cyanAccent, t);
+    _drawTwinklingStars(canvas, size, 30, 2.5, Colors.amberAccent, t);
+
+    // 3️⃣ Flowing Particles
+    _drawParticles(canvas, size, 40, t);
+  }
+
+  void _drawTwinklingStars(Canvas canvas, Size size, int count, double speed,
+      Color color, double t) {
+    final Paint paint = Paint()..color = color;
+    for (int i = 0; i < count; i++) {
+      final double x = (i * 53 + t * speed * 400) % size.width;
+      final double y =
+          (i * 97 + sin(t * pi * speed + i) * 25 + i * 7) % size.height;
+      final double radius =
+          0.5 + 0.5 * sin(t * 2 * pi * speed + i) + (i % 3) * 0.3;
+      paint.color = color.withOpacity(0.5 + 0.5 * sin(t * 2 * pi * speed + i));
+      canvas.drawCircle(Offset(x, y), radius, paint);
+    }
+  }
+
+  void _drawParticles(Canvas canvas, Size size, int count, double t) {
+    final Paint paint = Paint()..color = Colors.white24;
+    for (int i = 0; i < count; i++) {
+      final double x = (i * 73 + t * 200) % size.width;
+      final double y = (i * 91 + t * 180) % size.height;
+      final double radius = 1 + (i % 2) * 0.5;
+      canvas.drawCircle(Offset(x, y), radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant GalaxyPainter oldDelegate) => true;
+}
+
+/// ============================
 /// HOME PAGE
-/// ====================
-class StudentHomePage extends StatelessWidget {
-  const StudentHomePage({super.key});
+/// ============================
+class DashboardHomePage extends StatelessWidget {
+  const DashboardHomePage({super.key});
+
+  QuizModel _demoQuiz() {
+    return QuizModel(
+      id: 'demo1',
+      title: 'Space Knowledge Quiz',
+      category: 'Astronomy',
+      createdBy: 'demo',
+      questions: [
+        QuestionModel(
+          question: 'Which planet is known as the Red Planet?',
+          options: ['Mars', 'Earth', 'Venus', 'Jupiter'],
+          correctIndex: 0,
+        ),
+        QuestionModel(
+          question: 'How many moons does Earth have?',
+          options: ['1', '2', '3', '4'],
+          correctIndex: 0,
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black87;
-
+    final demoQuiz = _demoQuiz();
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xff4facfe), Color(0xff00f2fe)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      padding: const EdgeInsets.fromLTRB(20, 100, 20, 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Colors.cyanAccent, Colors.purpleAccent],
+            ).createShader(bounds),
+            child: const Text(
+              '👩‍🚀 Welcome, Explorer!',
+              style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white),
             ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                  color: Colors.black12, blurRadius: 10, offset: Offset(0, 5))
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Test your cosmic knowledge and climb the galaxy leaderboard 🌠',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70, fontSize: 15),
+          ),
+          const SizedBox(height: 30),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => QuizPlayScreen(quiz: demoQuiz)),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.white24),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.purpleAccent.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 6))
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.rocket_launch,
+                      color: Colors.purpleAccent, size: 38),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text(
+                      '✨ Try Demo Quiz\nTap to Start Your Journey!',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_ios,
+                      color: Colors.white70, size: 18)
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1.1,
+            children: const [
+              GlassStatCard(
+                  icon: Icons.quiz_rounded,
+                  title: 'Quizzes',
+                  value: '5',
+                  color: Colors.cyanAccent),
+              GlassStatCard(
+                  icon: Icons.star_rounded,
+                  title: 'Avg. Score',
+                  value: '82%',
+                  color: Colors.orangeAccent),
+              GlassStatCard(
+                  icon: Icons.emoji_events_rounded,
+                  title: 'Rank',
+                  value: '12',
+                  color: Colors.greenAccent),
+              GlassStatCard(
+                  icon: Icons.timer_rounded,
+                  title: 'Time',
+                  value: '3h',
+                  color: Colors.purpleAccent),
             ],
           ),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Welcome Back 👋',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold)),
-              SizedBox(height: 6),
-              Text('Let’s continue learning today!',
-                  style: TextStyle(color: Colors.white70, fontSize: 16)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 25),
-        Text("Your Progress",
-            style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: textColor)),
-        const SizedBox(height: 16),
-        Row(
-          children: const [
-            Expanded(
-              child: _StatCard(
-                icon: Icons.quiz_rounded,
-                title: 'Quizzes Taken',
-                value: '5',
-                color: Colors.blueAccent,
-              ),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: _StatCard(
-                icon: Icons.star_rounded,
-                title: 'Avg. Score',
-                value: '82%',
-                color: Colors.orangeAccent,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: const [
-            Expanded(
-              child: _StatCard(
-                icon: Icons.emoji_events_rounded,
-                title: 'Rank',
-                value: '12',
-                color: Colors.green,
-              ),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: _StatCard(
-                icon: Icons.timer_rounded,
-                title: 'Study Time',
-                value: '3h',
-                color: Colors.purple,
-              ),
-            ),
-          ],
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
+class GlassStatCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
   final Color color;
 
-  const _StatCard({
+  const GlassStatCard({
+    super.key,
     required this.icon,
     required this.title,
     required this.value,
@@ -243,116 +410,112 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xff1e293b) : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black26 : Colors.black12,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(0.1),
-            child: Icon(icon, color: color, size: 26),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white24),
           ),
-          const SizedBox(height: 12),
-          Text(value,
-              style:
-                  const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          Text(title,
-              style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey)),
-        ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.2),
+                radius: 20,
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(height: 8),
+              Text(value,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18)),
+              const SizedBox(height: 4),
+              Text(title,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-/// ====================
+/// ============================
 /// QUIZZES PAGE
-/// ====================
+/// ============================
 class AvailableQuizzesPage extends StatelessWidget {
   const AvailableQuizzesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return StreamBuilder<List<QuizModel>>(
       stream: FirestoreService().allQuizzes(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: CircularProgressIndicator(color: Colors.blueAccent));
+              child: CircularProgressIndicator(color: Colors.amberAccent));
         }
         final quizzes = snapshot.data ?? [];
         if (quizzes.isEmpty) {
-          return Center(
-              child: Text('No quizzes available',
-                  style: TextStyle(
-                      fontSize: 18,
-                      color: isDark ? Colors.white70 : Colors.grey)));
+          return const Center(
+            child: Text('No quizzes available 🌑',
+                style: TextStyle(color: Colors.white70, fontSize: 18)),
+          );
         }
         return ListView.builder(
           padding: const EdgeInsets.all(20),
           itemCount: quizzes.length,
-          itemBuilder: (context, index) {
-            final q = quizzes[index];
+          itemBuilder: (context, i) {
+            final q = quizzes[i];
             return Container(
               margin: const EdgeInsets.only(bottom: 14),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xff1e293b) : Colors.white,
+                color: Colors.white.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark ? Colors.black26 : Colors.black12,
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  )
-                ],
+                border: Border.all(color: Colors.white24),
               ),
               child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
                 leading: CircleAvatar(
-                  backgroundColor: Colors.blueAccent.withOpacity(0.1),
-                  child: Text('Q${index + 1}',
-                      style: const TextStyle(color: Colors.blueAccent)),
+                  backgroundColor: Colors.purpleAccent.withOpacity(0.2),
+                  child: Text('${i + 1}',
+                      style: const TextStyle(color: Colors.amberAccent)),
                 ),
                 title: Text(q.title,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: isDark ? Colors.white : Colors.black87)),
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
                 subtitle: Text('${q.questions.length} Questions',
-                    style: TextStyle(
-                        color: isDark ? Colors.white60 : Colors.grey)),
+                    style: const TextStyle(color: Colors.white60)),
                 trailing: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: Colors.deepPurpleAccent,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
                   ),
                   onPressed: () {
+                    // open QuizResultScreen for demo (replace with real args when available)
+                    final answers = <int, int>{};
+                    for (var i = 0; i < q.questions.length; i++)
+                      answers[i] = q.questions[i].correctIndex;
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => QuizPlayScreen(quiz: q),
+                        builder: (_) => QuizResultScreen(
+                          score: q.questions.length,
+                          total: q.questions.length,
+                          quiz: q,
+                          answers: answers,
+                        ),
                       ),
                     );
                   },
-                  child: const Text('Start',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text('Start'),
                 ),
               ),
             );
@@ -363,107 +526,127 @@ class AvailableQuizzesPage extends StatelessWidget {
   }
 }
 
-/// ====================
+/// ============================
 /// RESULTS PAGE
-/// ====================
+/// ============================
 class MyResultsPage extends StatelessWidget {
   const MyResultsPage({super.key});
-
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // demo quiz for result preview
+    final demo = QuizModel(
+      id: 'demo_result',
+      title: 'Demo Result Quiz',
+      category: 'Demo',
+      createdBy: 'demo',
+      questions: [
+        QuestionModel(
+            question: 'A?', options: ['A', 'B', 'C', 'D'], correctIndex: 0),
+        QuestionModel(
+            question: 'B?', options: ['A', 'B', 'C', 'D'], correctIndex: 1),
+      ],
+    );
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.assessment_rounded,
-                size: 90, color: isDark ? Colors.white54 : Colors.grey),
-            const SizedBox(height: 20),
-            Text('No Results Yet',
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black)),
-            const SizedBox(height: 10),
-            Text('Take a quiz to see your results here',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
-          ],
-        ),
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.assessment_rounded),
+        label: const Text('View Demo Result'),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => QuizResultScreen(
+                score: 1,
+                total: demo.questions.length,
+                quiz: demo,
+                answers: <int, int>{0: 0, 1: 2},
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-/// ====================
+/// ============================
 /// PROFILE PAGE
-/// ====================
+/// ============================
 class StudentProfilePage extends StatelessWidget {
   const StudentProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final authService = AuthService();
-    final currentUser = authService.currentUser;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final user = Provider.of<UserProvider>(context);
+    final currentUser = AuthService().currentUser;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         children: [
           const CircleAvatar(
             radius: 60,
-            backgroundColor: Colors.blueAccent,
-            child: Icon(Icons.person_rounded, size: 70, color: Colors.white),
+            backgroundColor: Colors.deepPurpleAccent,
+            child: Icon(Icons.person_rounded, color: Colors.white, size: 70),
           ),
           const SizedBox(height: 18),
-          Text(currentUser?.email ?? 'Student',
-              style: TextStyle(
-                  fontSize: 22,
+          Text(currentUser?.email ?? 'Student User',
+              style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black)),
+                  fontSize: 22)),
           const SizedBox(height: 8),
           Chip(
-            label: Text(userProvider.role ?? 'student'),
-            backgroundColor: isDark
-                ? Colors.blueAccent.withOpacity(0.25)
-                : Colors.blueAccent.withOpacity(0.15),
+            label: Text(user.role ?? 'student'),
+            backgroundColor: Colors.purpleAccent.withOpacity(0.3),
           ),
           const SizedBox(height: 30),
-          Card(
-            elevation: 4,
-            color: isDark ? const Color(0xff1e293b) : Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              children: const [
-                ListTile(
-                  leading: Icon(Icons.quiz_rounded, color: Colors.blueAccent),
-                  title: Text('Quizzes Taken'),
-                  trailing:
-                      Text('5', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                Divider(height: 1),
-                ListTile(
-                  leading: Icon(Icons.star_rounded, color: Colors.orange),
-                  title: Text('Total Score'),
-                  trailing: Text('410',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                Divider(height: 1),
-                ListTile(
-                  leading: Icon(Icons.timer_rounded, color: Colors.purple),
-                  title: Text('Total Time'),
-                  trailing: Text('3h 15m',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
+          const GlassProfileStats(),
         ],
+      ),
+    );
+  }
+}
+
+class GlassProfileStats extends StatelessWidget {
+  const GlassProfileStats({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: const Column(
+            children: [
+              ListTile(
+                leading: Icon(Icons.quiz_rounded, color: Colors.cyanAccent),
+                title: Text('Quizzes Taken',
+                    style: TextStyle(color: Colors.white)),
+                trailing: Text('5',
+                    style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
+              ),
+              Divider(color: Colors.white24),
+              ListTile(
+                leading: Icon(Icons.star_rounded, color: Colors.orangeAccent),
+                title:
+                    Text('Total Score', style: TextStyle(color: Colors.white)),
+                trailing: Text('410',
+                    style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
+              ),
+              Divider(color: Colors.white24),
+              ListTile(
+                leading: Icon(Icons.timer_rounded, color: Colors.purpleAccent),
+                title:
+                    Text('Study Time', style: TextStyle(color: Colors.white)),
+                trailing: Text('3h',
+                    style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

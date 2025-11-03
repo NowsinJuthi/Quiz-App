@@ -14,52 +14,45 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLoading = false;
-  bool _obscurePassword = true;
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  bool _loading = false;
+  bool _obscure = true;
 
-  final AuthService _authService = AuthService();
+  final AuthService _auth = AuthService();
 
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  late AnimationController _controller;
+  late Animation<double> _fade;
 
   @override
   void initState() {
     super.initState();
-    _animationController =
+    _controller =
         AnimationController(vsync: this, duration: const Duration(seconds: 1));
-    _fadeAnimation =
-        CurvedAnimation(parent: _animationController, curve: Curves.easeIn);
-    _animationController.forward();
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _controller.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
+    _controller.dispose();
+    _email.dispose();
+    _password.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
+    setState(() => _loading = true);
     try {
-      final user = await _authService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      final user = await _auth.login(
+        email: _email.text.trim(),
+        password: _password.text.trim(),
       );
 
-      if (!mounted) return;
-
-      if (user != null) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        await userProvider.loadUserRole(user.uid);
-
-        if (!mounted) return;
+      if (user != null && mounted) {
+        final prov = Provider.of<UserProvider>(context, listen: false);
+        await prov.loadUserRole(user.uid);
 
         Navigator.pushReplacement(
           context,
@@ -70,89 +63,67 @@ class _LoginScreenState extends State<LoginScreen>
           const SnackBar(
             content: Text('Login Successful!'),
             backgroundColor: Colors.greenAccent,
-            duration: Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
-      if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
           backgroundColor: Colors.redAccent,
-          duration: const Duration(seconds: 3),
         ),
       );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _loading = false);
     }
-  }
-
-  void _navigateToSignup() {
-    Navigator.pushNamed(context, '/signup');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Dark night blue
-      body: SafeArea(
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0A0F2C), Color(0xFF1E215D), Color(0xFF442F8A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          image: DecorationImage(
+            image: AssetImage('assets/images/stars_bg.png'),
+            fit: BoxFit.cover,
+            opacity: 0.2,
+          ),
+        ),
+        child: FadeTransition(
+          opacity: _fade,
+          child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 3D glowing icon
-                  Container(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blueAccent,
-                          blurRadius: 30,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.quiz,
-                      size: 100,
-                      color: Colors.lightBlueAccent,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  const Icon(Icons.auto_awesome, size: 90, color: Colors.cyanAccent),
+                  const SizedBox(height: 10),
                   const Text(
-                    'Welcome Back!',
+                    "Welcome Back to Galaxy Quiz 🌠",
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 30,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      shadows: [
-                        Shadow(color: Colors.blueAccent, blurRadius: 20)
-                      ],
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
-
-                  // Glass-style card for form
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
+                      color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                      ),
-                      boxShadow: const [
+                      border: Border.all(color: Colors.white30),
+                      boxShadow: [
                         BoxShadow(
-                          color: Colors.black38,
+                          color: Colors.deepPurpleAccent.withOpacity(0.4),
                           blurRadius: 20,
-                          offset: Offset(0, 10),
+                          spreadRadius: 2,
                         ),
                       ],
                     ),
@@ -160,105 +131,70 @@ class _LoginScreenState extends State<LoginScreen>
                       key: _formKey,
                       child: Column(
                         children: [
-                          _buildTextField(
-                            controller: _emailController,
+                          _field(
+                            controller: _email,
                             label: 'Email',
                             icon: Icons.email_outlined,
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Invalid email format';
-                              }
-                              return null;
-                            },
+                            validator: (v) => v != null && v.contains('@')
+                                ? null
+                                : 'Enter valid email',
                           ),
                           const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: _passwordController,
+                          _field(
+                            controller: _password,
                             label: 'Password',
                             icon: Icons.lock_outline,
-                            obscureText: _obscurePassword,
-                            suffixIcon: IconButton(
+                            obscure: _obscure,
+                            suffix: IconButton(
                               icon: Icon(
-                                _obscurePassword
+                                _obscure
                                     ? Icons.visibility_off
                                     : Icons.visibility,
                                 color: Colors.white70,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              if (value.length < 6) {
-                                return 'At least 6 characters required';
-                              }
-                              return null;
-                            },
+                            validator: (v) => v != null && v.length >= 6
+                                ? null
+                                : 'Min 6 chars',
                           ),
-                          const SizedBox(height: 24),
-
-                          // Animated glowing button
-                          _isLoading
+                          const SizedBox(height: 28),
+                          _loading
                               ? const CircularProgressIndicator(
-                                  color: Colors.lightBlueAccent,
-                                )
-                              : AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  decoration: BoxDecoration(
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.blueAccent.withOpacity(0.6),
-                                        blurRadius: 25,
-                                        spreadRadius: 2,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
+                                  color: Colors.cyanAccent)
+                              : ElevatedButton.icon(
+                                  icon: const Icon(Icons.rocket_launch),
+                                  label: const Text(
+                                    "Launch Login",
+                                    style: TextStyle(fontSize: 18),
                                   ),
-                                  child: ElevatedButton(
-                                    onPressed: _handleLogin,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Colors.lightBlueAccent.shade700,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 16, horizontal: 32),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Login',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.deepPurpleAccent,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14, horizontal: 36),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
+                                  onPressed: _login,
                                 ),
                           const SizedBox(height: 20),
                           TextButton(
-                            onPressed: _navigateToSignup,
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/signup'),
                             child: const Text(
                               "Don't have an account? Sign Up",
                               style: TextStyle(
-                                color: Colors.blueAccent,
-                                fontWeight: FontWeight.bold,
-                              ),
+                                  color: Colors.cyanAccent,
+                                  fontWeight: FontWeight.bold),
                             ),
-                          ),
+                          )
                         ],
                       ),
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
@@ -268,40 +204,35 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildTextField({
+  Widget _field({
     required TextEditingController controller,
     required String label,
     required IconData icon,
-    bool obscureText = false,
-    TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
-    Widget? suffixIcon,
+    bool obscure = false,
+    Widget? suffix,
   }) {
     return TextFormField(
       controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
+      validator: validator,
+      obscureText: obscure,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white70),
-        suffixIcon: suffixIcon,
+        suffixIcon: suffix,
+        labelStyle: const TextStyle(color: Colors.white70),
         filled: true,
         fillColor: Colors.white.withOpacity(0.05),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: Colors.white.withOpacity(0.3), width: 1.2),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: Colors.blueAccent, width: 1.5),
+          borderSide: const BorderSide(color: Colors.cyanAccent, width: 1.5),
         ),
-        errorStyle: const TextStyle(color: Colors.redAccent),
       ),
-      validator: validator,
     );
   }
 }
