@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/auth_service.dart';
 import '../../models/question_model.dart';
 import '../../models/quiz_model.dart';
 import '../../services/firestore_service.dart';
@@ -47,11 +47,12 @@ class _AddQuizScreenState extends State<AddQuizScreen> {
     }
 
     setState(() => _loading = true);
-    final user = FirebaseAuth.instance.currentUser!;
+    final user = AuthService().currentUser;
+    final uid = user?.uid ?? 'local_user';
     final quiz = QuizModel(
       title: _title.text.trim(),
       category: _category.text.trim(),
-      createdBy: user.uid,
+      createdBy: uid,
       questions: _questions,
     );
 
@@ -102,8 +103,7 @@ class _AddQuizScreenState extends State<AddQuizScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Text('Correct:',
-                  style: TextStyle(color: Colors.white70)),
+              const Text('Correct:', style: TextStyle(color: Colors.white70)),
               const SizedBox(width: 8),
               DropdownButton<int>(
                 dropdownColor: const Color(0xFF2A1B5A),
@@ -160,8 +160,8 @@ class _AddQuizScreenState extends State<AddQuizScreen> {
               child: Column(
                 children: [
                   GlassCard(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     child: Column(
                       children: [
                         TextField(
@@ -219,7 +219,8 @@ class _AddQuizScreenState extends State<AddQuizScreen> {
                   ),
                   const SizedBox(height: 10),
                   _loading
-                      ? const CircularProgressIndicator(color: Colors.amberAccent)
+                      ? const CircularProgressIndicator(
+                          color: Colors.amberAccent)
                       : ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.amberAccent,

@@ -1,26 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../services/auth_service.dart';
-import '../../providers/user_provider.dart';
-import '../root_page.dart';
+import '../student/quiz_play_screen.dart';
+import '../../models/quiz_model.dart';
+import '../../models/question_model.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
-  bool _loading = false;
-  bool _obscure = true;
-
-  final AuthService _auth = AuthService();
-
   late AnimationController _controller;
   late Animation<double> _fade;
 
@@ -28,209 +19,244 @@ class _LoginScreenState extends State<LoginScreen>
   void initState() {
     super.initState();
     _controller =
-        AnimationController(vsync: this, duration: const Duration(seconds: 1));
-    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+        AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
     _controller.forward();
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    _email.dispose();
-    _password.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
-    try {
-      final user = await _auth.login(
-        email: _email.text.trim(),
-        password: _password.text.trim(),
-      );
-
-      if (user != null && mounted) {
-        final prov = Provider.of<UserProvider>(context, listen: false);
-        await prov.loadUserRole(user.uid);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const RootPage()),
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login Successful!'),
-            backgroundColor: Colors.greenAccent,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.redAccent,
+  QuizModel _demoQuiz() {
+    return QuizModel(
+      id: 'space_demo',
+      title: 'Space Knowledge Quiz',
+      category: 'Astronomy',
+      createdBy: 'Demo',
+      questions: [
+        QuestionModel(
+          question: 'Which planet is known as the Red Planet?',
+          options: ['Mars', 'Venus', 'Earth', 'Jupiter'],
+          correctIndex: 0,
         ),
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+        QuestionModel(
+          question: 'How many moons does Earth have?',
+          options: ['1', '2', '3', '4'],
+          correctIndex: 0,
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final quiz = _demoQuiz();
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0A0F2C), Color(0xFF1E215D), Color(0xFF442F8A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          image: DecorationImage(
-            image: AssetImage('assets/images/stars_bg.png'),
-            fit: BoxFit.cover,
-            opacity: 0.2,
-          ),
-        ),
-        child: FadeTransition(
-          opacity: _fade,
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  const Icon(Icons.auto_awesome, size: 90, color: Colors.cyanAccent),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Welcome Back to Galaxy Quiz 🌠",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+      backgroundColor: const Color(0xFF0F172A), // Dark background
+      body: FadeTransition(
+        opacity: _fade,
+        child: Stack(
+          children: [
+            // 🌌 Animated star background
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF0A0F2C),
+                      Color(0xFF1E215D),
+                      Color(0xFF442F8A),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  const SizedBox(height: 40),
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.deepPurpleAccent.withOpacity(0.4),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                        ),
-                      ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 120,
+              left: 40,
+              child: _buildGlowingStar(Colors.blueAccent),
+            ),
+            Positioned(
+              bottom: 120,
+              right: 60,
+              child: _buildGlowingStar(Colors.purpleAccent),
+            ),
+            Positioned(
+              top: 200,
+              right: 40,
+              child: _buildGlowingStar(Colors.cyanAccent),
+            ),
+
+            // 🌠 Main content
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App Logo or Icon
+                    Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blueAccent,
+                            blurRadius: 40,
+                            spreadRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.rocket_launch_rounded,
+                        color: Colors.lightBlueAccent,
+                        size: 100,
+                      ),
                     ),
-                    child: Form(
-                      key: _formKey,
+                    const SizedBox(height: 20),
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Colors.cyanAccent, Colors.blueAccent],
+                      ).createShader(bounds),
+                      child: const Text(
+                        'Welcome to Galaxy Quiz!',
+                        style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Explore knowledge across the stars 🌟',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Glass-style quiz card
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black45,
+                            blurRadius: 20,
+                            offset: Offset(0, 10),
+                          ),
+                        ],
+                      ),
                       child: Column(
                         children: [
-                          _field(
-                            controller: _email,
-                            label: 'Email',
-                            icon: Icons.email_outlined,
-                            validator: (v) => v != null && v.contains('@')
-                                ? null
-                                : 'Enter valid email',
-                          ),
-                          const SizedBox(height: 16),
-                          _field(
-                            controller: _password,
-                            label: 'Password',
-                            icon: Icons.lock_outline,
-                            obscure: _obscure,
-                            suffix: IconButton(
-                              icon: Icon(
-                                _obscure
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.white70,
-                              ),
-                              onPressed: () =>
-                                  setState(() => _obscure = !_obscure),
+                          const Text(
+                            '✨ Demo Space Quiz',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
                             ),
-                            validator: (v) => v != null && v.length >= 6
-                                ? null
-                                : 'Min 6 chars',
                           ),
-                          const SizedBox(height: 28),
-                          _loading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.cyanAccent)
-                              : ElevatedButton.icon(
-                                  icon: const Icon(Icons.rocket_launch),
-                                  label: const Text(
-                                    "Launch Login",
-                                    style: TextStyle(fontSize: 18),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.deepPurpleAccent,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14, horizontal: 36),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  onPressed: _login,
-                                ),
-                          const SizedBox(height: 20),
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pushNamed(context, '/signup'),
-                            child: const Text(
-                              "Don't have an account? Sign Up",
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Take a quick journey through space knowledge!',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 🚀 Glowing launch button
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.rocket_launch, size: 22),
+                            label: const Text(
+                              'Launch Quiz',
                               style: TextStyle(
-                                  color: Colors.cyanAccent,
-                                  fontWeight: FontWeight.bold),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          )
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 16, horizontal: 32),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              elevation: 10,
+                              shadowColor: Colors.blueAccent,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      QuizPlayScreen(quiz: quiz),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
-                  )
-                ],
+                    const SizedBox(height: 40),
+
+                    // Footer text
+                    const Text(
+                      '⚡ Login or Sign Up to unlock your missions!',
+                      style: TextStyle(
+                        color: Colors.amberAccent,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _field({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    String? Function(String?)? validator,
-    bool obscure = false,
-    Widget? suffix,
-  }) {
-    return TextFormField(
-      controller: controller,
-      validator: validator,
-      obscureText: obscure,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.white70),
-        suffixIcon: suffix,
-        labelStyle: const TextStyle(color: Colors.white70),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.cyanAccent, width: 1.5),
+  Widget _buildGlowingStar(Color color) {
+    return TweenAnimationBuilder(
+      tween: Tween<double>(begin: 0.7, end: 1.3),
+      duration: const Duration(seconds: 2),
+      curve: Curves.easeInOut,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: child,
+        );
+      },
+      onEnd: () => setState(() {}),
+      child: Container(
+        width: 16,
+        height: 16,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: color.withOpacity(0.8), blurRadius: 25),
+          ],
         ),
       ),
     );

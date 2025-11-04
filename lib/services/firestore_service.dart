@@ -1,86 +1,52 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import '../models/quiz_model.dart';
+import '../models/question_model.dart';
 
+// Minimal in-memory FirestoreService mock for offline/dev mode.
 class FirestoreService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final List<QuizModel> _quizzes = [
+    QuizModel(
+      id: 'demo_local_1',
+      title: 'Local Demo Quiz',
+      category: 'General',
+      createdBy: 'local',
+      questions: [
+        QuestionModel(
+            id: 'q1',
+            question: 'What is 2+2?',
+            options: ['1', '2', '3', '4'],
+            correctIndex: 3),
+        QuestionModel(
+            id: 'q2',
+            question: 'Which color is the sky?',
+            options: ['Red', 'Blue', 'Green', 'Yellow'],
+            correctIndex: 1),
+      ],
+    )
+  ];
 
-  // create quiz
-  Future<String> createQuiz(QuizModel quiz) async {
-    final doc = _db.collection('quizzes').doc();
-    quiz.id = doc.id;
-    await doc.set(quiz.toMap());
-    return doc.id;
+  final StreamController<List<QuizModel>> _ctrl =
+      StreamController<List<QuizModel>>.broadcast();
+
+  FirestoreService() {
+    _ctrl.add(List<QuizModel>.from(_quizzes));
   }
 
-  Future<void> updateQuiz(QuizModel quiz) async {
-    await _db.collection('quizzes').doc(quiz.id).update(quiz.toMap());
+  Stream<List<QuizModel>> allQuizzes() => _ctrl.stream;
+
+  Future<void> createQuiz(QuizModel quiz) async {
+    _quizzes.add(quiz);
+    _ctrl.add(List<QuizModel>.from(_quizzes));
+    await Future<void>.value();
   }
 
-  Future<void> deleteQuiz(String quizId) async {
-    await _db.collection('quizzes').doc(quizId).delete();
+  Future<void> saveResult(
+      QuizModel quiz, int score, int total, Map<int, int> answers) async {
+    // no-op for local mode (you can store results in-memory if needed)
+    await Future<void>.delayed(const Duration(milliseconds: 50));
   }
 
-  Stream<List<QuizModel>> teacherQuizzes(String teacherId) {
-    return _db
-        .collection('quizzes')
-        .where('createdBy', isEqualTo: teacherId)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => QuizModel.fromMap(d.data()..['id'] = d.id))
-            .toList());
-  }
-
-  Stream<List<QuizModel>> allQuizzes() {
-    return _db.collection('quizzes').snapshots().map(
-          (snap) => snap.docs
-              .map((d) => QuizModel.fromMap(d.data()..['id'] = d.id))
-              .toList(),
-        );
-  }
-
-  // results
-  Future<void> saveResult({
-    required String studentId,
-    required String studentEmail,
-    required String quizId,
-    required String quizTitle,
-    required int score,
-    required int total,
-  }) async {
-    await _db.collection('results').add({
-      'studentId': studentId,
-      'studentEmail': studentEmail,
-      'quizId': quizId,
-      'quizTitle': quizTitle,
-      'score': score,
-      'total': total,
-      'date': FieldValue.serverTimestamp(),
-    });
-  }
-
-  Stream<List<Map<String, dynamic>>> getResultsForTeacher(String teacherId) {
-    // optionally you can filter by teacherId if you save teacherId in results
-    return _db
-        .collection('results')
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map((s) => s.docs.map((d) {
-              final m = d.data();
-              m['id'] = d.id;
-              return m;
-            }).toList());
-  }
-
-  Stream<List<Map<String, dynamic>>> getResultsForStudent(String studentId) {
-    return _db
-        .collection('results')
-        .where('studentId', isEqualTo: studentId)
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map((s) => s.docs.map((d) {
-              final m = d.data();
-              m['id'] = d.id;
-              return m;
-            }).toList());
+  void dispose() {
+    _ctrl.close();
   }
 }

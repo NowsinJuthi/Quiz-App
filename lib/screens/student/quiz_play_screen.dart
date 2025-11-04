@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/auth_service.dart';
 import '../../models/quiz_model.dart';
 import '../../services/firestore_service.dart';
 import 'quiz_result_screen.dart';
@@ -52,15 +52,15 @@ class _QuizPlayScreenState extends State<QuizPlayScreen>
       final chosen = answers[i];
       if (chosen != null && chosen == q.correctIndex) score++;
     }
-    final user = FirebaseAuth.instance.currentUser!;
-    await FirestoreService().saveResult(
-      studentId: user.uid,
-      studentEmail: user.email ?? '',
-      quizId: widget.quiz.id,
-      quizTitle: widget.quiz.title,
-      score: score,
-      total: total,
-    );
+
+    // Use local AuthService (no Firebase)
+    final user = AuthService().currentUser;
+    final studentId = user?.uid ?? 'local_guest';
+    final studentEmail = user?.email ?? 'guest@local';
+
+    // Call mock FirestoreService (uses a permissive saveResult signature in the mock)
+    await FirestoreService().saveResult(widget.quiz, score, total, answers);
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

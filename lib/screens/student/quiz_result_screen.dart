@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../models/quiz_model.dart';
-import 'quiz_play_screen.dart';
 
 class QuizResultScreen extends StatelessWidget {
   final int score;

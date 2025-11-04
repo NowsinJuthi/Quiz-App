@@ -14,24 +14,24 @@ class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
-  final _pass = TextEditingController();
+  final _password = TextEditingController();
   final _confirm = TextEditingController();
-  bool _loading = false;
   String _role = 'student';
-  bool _obscure = true;
+  bool _loading = false;
+  bool _obscurePass = true;
   bool _obscureConfirm = true;
 
-  final _auth = AuthService();
+  final AuthService _auth = AuthService();
 
   late AnimationController _controller;
-  late Animation<double> _fade;
+  late Animation<double> _fadeIn;
 
   @override
   void initState() {
     super.initState();
     _controller =
         AnimationController(vsync: this, duration: const Duration(seconds: 1));
-    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
   }
 
@@ -39,40 +39,45 @@ class _SignupScreenState extends State<SignupScreen>
   void dispose() {
     _controller.dispose();
     _email.dispose();
-    _pass.dispose();
+    _password.dispose();
     _confirm.dispose();
     super.dispose();
   }
 
-  Future<void> _signup() async {
+  Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
+
     try {
       final user = await _auth.signup(
         email: _email.text.trim(),
-        password: _pass.text.trim(),
+        password: _password.text.trim(),
         name: _email.text.split('@')[0],
         role: _role,
       );
+      if (!mounted) return;
 
-      if (user != null && mounted) {
-        final prov = Provider.of<UserProvider>(context, listen: false);
-        await prov.loadUserRole(user.uid);
-        Navigator.pushReplacementNamed(context, '/login');
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text("Registration Successful!"),
-          backgroundColor: Colors.greenAccent,
-        ));
+      if (user != null) {
+        Provider.of<UserProvider>(context, listen: false)
+            .loadUserRole(user.uid);
+        Navigator.pushReplacementNamed(context, '/');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration Successful!'),
+            backgroundColor: Colors.greenAccent,
+          ),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Error: $e"),
-        backgroundColor: Colors.redAccent,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+      );
     } finally {
-      if (mounted) setState(() => _loading = false);
+      setState(() => _loading = false);
     }
   }
+
+  void _goToLogin() => Navigator.pushNamed(context, '/login');
 
   @override
   Widget build(BuildContext context) {
@@ -84,147 +89,173 @@ class _SignupScreenState extends State<SignupScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          image: DecorationImage(
-            image: AssetImage('assets/images/stars_bg.png'),
-            fit: BoxFit.cover,
-            opacity: 0.2,
-          ),
         ),
-        child: FadeTransition(
-          opacity: _fade,
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  const Icon(Icons.person_add_alt_1_rounded,
-                      size: 90, color: Colors.cyanAccent),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Join the Galaxy 🌌",
-                    style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
-                  const SizedBox(height: 40),
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.deepPurpleAccent.withOpacity(0.4),
-                          blurRadius: 20,
-                          spreadRadius: 2,
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeIn,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const Icon(Icons.person_add_alt_1_rounded,
+                        size: 90, color: Colors.amberAccent),
+                    const SizedBox(height: 12),
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Colors.cyanAccent, Colors.purpleAccent],
+                      ).createShader(bounds),
+                      child: const Text(
+                        'Join the Galaxy!',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                      ],
+                      ),
                     ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          _field(
-                            controller: _email,
-                            label: 'Email',
-                            icon: Icons.email_outlined,
-                            validator: (v) => v != null && v.contains('@')
-                                ? null
-                                : 'Invalid email',
+                    const SizedBox(height: 40),
+
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.deepPurpleAccent.withOpacity(0.3),
+                            blurRadius: 25,
+                            spreadRadius: 3,
                           ),
-                          const SizedBox(height: 16),
-                          _field(
-                            controller: _pass,
-                            label: 'Password',
-                            icon: Icons.lock_outline,
-                            obscure: _obscure,
-                            suffix: IconButton(
-                              icon: Icon(
-                                  _obscure
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            _buildTextField(
+                              controller: _email,
+                              label: 'Email',
+                              icon: Icons.email_outlined,
+                              validator: (v) => v == null || !v.contains('@')
+                                  ? 'Enter valid email'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildTextField(
+                              controller: _password,
+                              label: 'Password',
+                              icon: Icons.lock_outline,
+                              obscureText: _obscurePass,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePass
                                       ? Icons.visibility_off
                                       : Icons.visibility,
-                                  color: Colors.white70),
-                              onPressed: () =>
-                                  setState(() => _obscure = !_obscure),
+                                  color: Colors.white70,
+                                ),
+                                onPressed: () =>
+                                    setState(() => _obscurePass = !_obscurePass),
+                              ),
+                              validator: (v) =>
+                                  v != null && v.length >= 6
+                                      ? null
+                                      : 'Min 6 chars',
                             ),
-                            validator: (v) => v != null && v.length >= 6
-                                ? null
-                                : 'Min 6 characters',
-                          ),
-                          const SizedBox(height: 16),
-                          _field(
-                            controller: _confirm,
-                            label: 'Confirm Password',
-                            icon: Icons.lock_person_outlined,
-                            obscure: _obscureConfirm,
-                            suffix: IconButton(
-                              icon: Icon(
+                            const SizedBox(height: 16),
+                            _buildTextField(
+                              controller: _confirm,
+                              label: 'Confirm Password',
+                              icon: Icons.lock_person,
+                              obscureText: _obscureConfirm,
+                              suffixIcon: IconButton(
+                                icon: Icon(
                                   _obscureConfirm
                                       ? Icons.visibility_off
                                       : Icons.visibility,
-                                  color: Colors.white70),
-                              onPressed: () => setState(
-                                  () => _obscureConfirm = !_obscureConfirm),
-                            ),
-                            validator: (v) => v == _pass.text
-                                ? null
-                                : 'Passwords do not match',
-                          ),
-                          const SizedBox(height: 16),
-                          DropdownButtonFormField<String>(
-                            value: _role,
-                            dropdownColor: const Color(0xFF1E215D),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'student',
-                                child: Text('Student',
-                                    style: TextStyle(color: Colors.white70)),
-                              ),
-                              DropdownMenuItem(
-                                value: 'teacher',
-                                child: Text('Teacher',
-                                    style: TextStyle(color: Colors.white70)),
-                              ),
-                            ],
-                            onChanged: (v) => setState(() => _role = v!),
-                            decoration: _dropdownDecoration('Select Role'),
-                          ),
-                          const SizedBox(height: 28),
-                          _loading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.cyanAccent)
-                              : ElevatedButton.icon(
-                                  icon: const Icon(Icons.rocket_launch),
-                                  label: const Text("Register"),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.deepPurpleAccent,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14, horizontal: 36),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  onPressed: _signup,
+                                  color: Colors.white70,
                                 ),
-                          const SizedBox(height: 20),
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pushNamed(context, '/login'),
-                            child: const Text(
-                              "Already have an account? Login",
-                              style: TextStyle(
-                                  color: Colors.cyanAccent,
-                                  fontWeight: FontWeight.bold),
+                                onPressed: () => setState(
+                                    () => _obscureConfirm = !_obscureConfirm),
+                              ),
+                              validator: (v) => v == _password.text
+                                  ? null
+                                  : 'Passwords do not match',
                             ),
-                          )
-                        ],
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<String>(
+                              dropdownColor: const Color(0xFF1E215D),
+                              initialValue: _role,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'student',
+                                  child: Text('Student',
+                                      style:
+                                          TextStyle(color: Colors.white70)),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'teacher',
+                                  child: Text('Teacher',
+                                      style:
+                                          TextStyle(color: Colors.white70)),
+                                ),
+                              ],
+                              onChanged: (v) => setState(() => _role = v!),
+                              decoration: InputDecoration(
+                                labelText: 'Role',
+                                labelStyle:
+                                    const TextStyle(color: Colors.white70),
+                                prefixIcon: const Icon(Icons.school,
+                                    color: Colors.white70),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                      color: Colors.white.withOpacity(0.3)),
+                                ),
+                                focusedBorder: const OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: Colors.cyanAccent, width: 1.5),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            _loading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.cyanAccent)
+                                : ElevatedButton.icon(
+                                    icon: const Icon(Icons.star),
+                                    label: const Text('Register'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepPurpleAccent,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 40, vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16)),
+                                      shadowColor: Colors.purpleAccent,
+                                      elevation: 12,
+                                    ),
+                                    onPressed: _register,
+                                  ),
+                          ],
+                        ),
                       ),
                     ),
-                  )
-                ],
+                    const SizedBox(height: 20),
+                    TextButton(
+                      onPressed: _goToLogin,
+                      child: const Text(
+                        'Already have an account? Login',
+                        style: TextStyle(
+                          color: Colors.amberAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -233,51 +264,32 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  InputDecoration _dropdownDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
-      prefixIcon: const Icon(Icons.school, color: Colors.white70),
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.05),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.cyanAccent, width: 1.5),
-      ),
-    );
-  }
-
-  Widget _field({
+  Widget _buildTextField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    bool obscureText = false,
+    Widget? suffixIcon,
     String? Function(String?)? validator,
-    bool obscure = false,
-    Widget? suffix,
   }) {
     return TextFormField(
       controller: controller,
+      obscureText: obscureText,
       validator: validator,
-      obscureText: obscure,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.white70),
-        suffixIcon: suffix,
         labelStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white70),
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.white.withOpacity(0.05),
-        enabledBorder: OutlineInputBorder(
+        border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.cyanAccent, width: 1.5),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.cyanAccent, width: 1.5),
         ),
       ),
     );

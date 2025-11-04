@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
-import 'firebase_options.dart';
+// removed firebase_options.dart — running in local/offline mode (no Firebase)
 import 'models/quiz_model.dart';
 import 'models/question_model.dart';
 import 'providers/user_provider.dart';
@@ -20,14 +19,12 @@ import 'screens/student/quiz_play_screen.dart';
 import 'screens/student/quiz_result_screen.dart';
 import 'screens/student/profile_page.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -40,10 +37,10 @@ class MyApp extends StatelessWidget {
           scaffoldBackgroundColor: const Color(0xFF0A0F2C),
           useMaterial3: true,
         ),
-        home: NavbarScaffold(child: const HomePage(), routeName: '/'),
+        home: NavbarScaffold(child: HomePage(), routeName: '/'),
         routes: {
           '/studentdashboard/profile': (context) => NavbarScaffold(
-                child: const StudentProfilePage(),
+                child: StudentProfilePage(),
                 routeName: '/studentdashboard/profile',
               ),
 
@@ -96,29 +93,21 @@ class MyApp extends StatelessWidget {
 
           // auth / dashboards / teacher pages
           '/login': (context) =>
-              NavbarScaffold(child: const LoginScreen(), routeName: '/login'),
+              NavbarScaffold(child: HomePage(), routeName: '/login'),
           '/signup': (context) =>
-              NavbarScaffold(child: const SignupScreen(), routeName: '/signup'),
+              NavbarScaffold(child: SignupScreen(), routeName: '/signup'),
           '/student-dashboard': (context) => NavbarScaffold(
-              child: const StudentDashboard(), routeName: '/student-dashboard'),
+              child: StudentDashboard(), routeName: '/student-dashboard'),
           '/teacher-dashboard': (context) => NavbarScaffold(
-              child: const TeacherDashboard(), routeName: '/teacher-dashboard'),
+              child: TeacherDashboard(), routeName: '/teacher-dashboard'),
           '/teacher-create-quiz': (context) => NavbarScaffold(
-                child: AddQuizScreen(),
-                routeName: '/teacher-create-quiz',
-              ),
+              child: AddQuizScreen(), routeName: '/teacher-create-quiz'),
           '/teacher-view-quiz': (context) => NavbarScaffold(
-                child: EditQuizListScreen(),
-                routeName: '/teacher-view-quiz',
-              ),
+              child: EditQuizListScreen(), routeName: '/teacher-view-quiz'),
           '/teacher-results': (context) => NavbarScaffold(
-                child: ViewResultsScreen(),
-                routeName: '/teacher-results',
-              ),
+              child: ViewResultsScreen(), routeName: '/teacher-results'),
           '/teacher-profile': (context) => NavbarScaffold(
-                child: TeacherProfilePage(),
-                routeName: '/teacher-profile',
-              ),
+              child: TeacherProfilePage(), routeName: '/teacher-profile'),
         },
       ),
     );
@@ -129,8 +118,7 @@ class MyApp extends StatelessWidget {
 class NavbarScaffold extends StatelessWidget {
   final Widget child;
   final String routeName;
-  const NavbarScaffold(
-      {super.key, required this.child, required this.routeName});
+  const NavbarScaffold({required this.child, required this.routeName});
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +133,7 @@ class NavbarScaffold extends StatelessWidget {
 
 class TopNavbar extends StatelessWidget {
   final String activeRoute;
-  const TopNavbar({super.key, required this.activeRoute});
+  const TopNavbar({required this.activeRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -255,8 +243,6 @@ class _NavButton extends StatelessWidget {
 
 /// Home page with Launch Quiz button that routes to /studentdashboard/quizzes with quiz argument
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
   QuizModel _demoQuiz() {
     return QuizModel(
       id: 'demo1',

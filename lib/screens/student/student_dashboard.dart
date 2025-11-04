@@ -9,7 +9,6 @@ import '../../models/quiz_model.dart';
 import '../../models/question_model.dart';
 import 'quiz_play_screen.dart' show QuizPlayScreen;
 import 'quiz_result_screen.dart' show QuizResultScreen;
-// add import for the external profile page
 import 'profile_page.dart';
 
 class StudentDashboard extends StatefulWidget {
@@ -22,18 +21,20 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard>
     with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
-  final AuthService _authService = AuthService();
+  late final AuthService _authService;
   late final List<Widget> _pages;
   late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
+    // create AuthService after Firebase was initialized in main()
+    _authService = AuthService();
     _pages = [
-      DashboardHomePage(),
-      AvailableQuizzesPage(),
-      MyResultsPage(),
-      StudentProfilePage(),
+      const DashboardHomePage(),
+      const AvailableQuizzesPage(),
+      const QuizResultWrapper(),
+      const StudentProfilePage(),
     ];
 
     _controller = AnimationController(
@@ -49,57 +50,18 @@ class _StudentDashboardState extends State<StudentDashboard>
   }
 
   void _onItemTapped(int index) {
-    // Quizzes -> /studentdashboard/quizzes
-    if (index == 1) {
-      Navigator.pushReplacementNamed(context, '/studentdashboard/quizzes');
-      return;
-    }
+    // Navigate to named routes so the app route changes (instead of only switching tabs)
+    final routes = [
+      '/student-dashboard',            // Home
+      '/studentdashboard/quizzes',     // Quizzes
+      '/studentdashboard/result',      // Results
+      '/studentdashboard/profile',     // Profile
+    ];
 
-    // Results -> /studentdashboard/result (pass demo data as arguments)
-    if (index == 2) {
-      final demoQuiz = QuizModel(
-        id: 'demo_for_nav',
-        title: 'Demo Quiz (from nav)',
-        category: 'Demo',
-        createdBy: 'system',
-        questions: [
-          QuestionModel(
-              id: 'd1',
-              question: 'Demo Q1?',
-              options: ['A', 'B', 'C', 'D'],
-              correctIndex: 0),
-          QuestionModel(
-              id: 'd2',
-              question: 'Demo Q2?',
-              options: ['A', 'B', 'C', 'D'],
-              correctIndex: 1),
-        ],
-      );
-      final answers = <int, int>{};
-      for (var i = 0; i < demoQuiz.questions.length; i++)
-        answers[i] = demoQuiz.questions[i].correctIndex;
-
-      Navigator.pushReplacementNamed(
-        context,
-        '/studentdashboard/result',
-        arguments: {
-          'quiz': demoQuiz,
-          'score': demoQuiz.questions.length,
-          'total': demoQuiz.questions.length,
-          'answers': answers,
-        },
-      );
-      return;
-    }
-
-    // Profile -> open profile route (no login required)
-    if (index == 3) {
-      Navigator.pushNamed(context, '/studentdashboard/profile');
-      return;
-    }
-
-    // Otherwise just switch the bottom nav tab
-    setState(() => _selectedIndex = index);
+    final target = (index >= 0 && index < routes.length) ? routes[index] : '/student-dashboard';
+    final current = ModalRoute.of(context)?.settings.name;
+    if (current == target) return;
+    Navigator.pushReplacementNamed(context, target);
   }
 
   Future<void> _handleLogout() async {
@@ -577,6 +539,48 @@ class MyResultsPage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// ============================
+/// RESULTS TAB WRAPPER
+/// ============================
+class QuizResultWrapper extends StatelessWidget {
+  const QuizResultWrapper({super.key});
+
+  QuizModel _demoQuiz() {
+    return QuizModel(
+      id: 'demo_result_tab',
+      title: 'Result Preview',
+      category: 'Demo',
+      createdBy: 'system',
+      questions: [
+        QuestionModel(
+            id: 'r1',
+            question: 'Demo Q1?',
+            options: ['A', 'B', 'C', 'D'],
+            correctIndex: 0),
+        QuestionModel(
+            id: 'r2',
+            question: 'Demo Q2?',
+            options: ['A', 'B', 'C', 'D'],
+            correctIndex: 1),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final demo = _demoQuiz();
+    final answers = <int, int>{};
+    for (var i = 0; i < demo.questions.length; i++)
+      answers[i] = demo.questions[i].correctIndex;
+    return QuizResultScreen(
+      score: demo.questions.length,
+      total: demo.questions.length,
+      quiz: demo,
+      answers: answers,
     );
   }
 }

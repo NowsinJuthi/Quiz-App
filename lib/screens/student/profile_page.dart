@@ -13,7 +13,7 @@ class StudentProfilePage extends StatelessWidget {
     final authService = AuthService();
     final currentUser = authService.currentUser;
 
-    // Safe extraction from provider (use dynamic to avoid compile errors if fields differ)
+    // safe provider extraction (compatible with different provider implementations)
     String? providerEmail;
     String? providerRole;
     try {
@@ -24,7 +24,7 @@ class StudentProfilePage extends StatelessWidget {
     } catch (_) {}
 
     final email = currentUser?.email ?? providerEmail ?? 'Guest User';
-    final role = providerRole ?? 'Visitor';
+    final role = providerRole ?? 'Student';
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F2C),
@@ -62,8 +62,13 @@ class StudentProfilePage extends StatelessWidget {
               labelStyle: const TextStyle(color: Colors.white),
             ),
             const SizedBox(height: 24),
+
+            // Stats card (keeps glass style consistent)
             const GlassProfileStats(),
+
             const SizedBox(height: 24),
+
+            // If logged in show logout, otherwise a note
             if (currentUser != null)
               ElevatedButton.icon(
                 onPressed: () async {
@@ -113,7 +118,7 @@ class GlassProfileStats extends StatelessWidget {
                 leading: Icon(Icons.quiz_rounded, color: Colors.cyanAccent),
                 title: Text('Quizzes Taken',
                     style: TextStyle(color: Colors.white)),
-                trailing: Text('5',
+                trailing: Text('—',
                     style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
               ),
               Divider(color: Colors.white24, height: 0),
@@ -122,7 +127,7 @@ class GlassProfileStats extends StatelessWidget {
                     color: Colors.orangeAccent),
                 title:
                     Text('Total Score', style: TextStyle(color: Colors.white)),
-                trailing: Text('410',
+                trailing: Text('—',
                     style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
               ),
               Divider(color: Colors.white24, height: 0),
@@ -130,7 +135,7 @@ class GlassProfileStats extends StatelessWidget {
                 leading: Icon(Icons.timer_rounded, color: Colors.purpleAccent),
                 title:
                     Text('Study Time', style: TextStyle(color: Colors.white)),
-                trailing: Text('3h',
+                trailing: Text('—',
                     style: TextStyle(color: Colors.amberAccent, fontSize: 16)),
               ),
             ],
